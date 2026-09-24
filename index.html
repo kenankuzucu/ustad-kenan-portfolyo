@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Üstad Kenan Kuzucu</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Raleway:wght@300;400;500;600&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --rose:#f9c6cf;--peach:#fde8d8;--lavender:#e8d5f5;--sky:#d4eaf7;
+  --mint:#d4f5e9;--gold:#f5d98b;--cream:#fffaf4;
+  --text:#332b47;--accent:#a1609a;--accent2:#4b8cc0;--muted:#5a4b70;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Raleway',sans-serif;background:var(--cream);color:var(--text);font-weight:500;overflow-x:hidden;cursor:none;text-rendering:optimizeLegibility;}
+
+/* ── CANVAS ── */
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
+
+/* ── PETALS ── */
+.petal{position:fixed;border-radius:0 60% 0 60%;opacity:0;animation:fall linear infinite;z-index:1;pointer-events:none;}
+@keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:.8}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* ── CURSOR ── */
+#cursor-dot{position:fixed;width:10px;height:10px;border-radius:50%;background:var(--accent);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:left .04s,top .04s,transform .2s;}
+#cursor-ring{position:fixed;width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .14s,top .14s,width .3s,height .3s;opacity:.6;}
+#cursor-glow{position:fixed;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(192,132,184,.15) 0%,transparent 70%);pointer-events:none;z-index:1;transform:translate(-50%,-50%);transition:left .1s,top .1s;}
+
+/* ── SCROLL PROG ── */
+#scroll-prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2),#f5d98b);z-index:300;width:0%;transition:width .1s;}
+
+/* ── RIPPLE ── */
+.ripple-effect{position:fixed;border-radius:50%;background:rgba(192,132,184,.3);pointer-events:none;z-index:9997;transform:scale(0);animation:rippleOut .6s ease-out forwards;}
+@keyframes rippleOut{to{transform:scale(6);opacity:0}}
+
+/* ══════════════
+   SIDEBAR
+══════════════ */
+#sidebar{
+  position:fixed;left:0;top:50%;transform:translateY(-50%);
+  z-index:200;
+  display:flex;flex-direction:column;gap:3px;
+  padding:14px 0 14px 10px;
+  background:rgba(255,248,252,.88);
+  backdrop-filter:blur(16px);
+  border-radius:0 18px 18px 0;
+  border:1px solid rgba(192,132,184,.18);border-left:none;
+  box-shadow:4px 0 24px rgba(192,132,184,.13);
+  transition:transform .4s,opacity .4s;
+}
+#sidebar.hidden{transform:translateY(-50%) translateX(-110%);opacity:0;}
+.sb-item{
+  display:flex;align-items:center;gap:9px;
+  text-decoration:none;
+  padding:8px 18px 8px 6px;
+  border-radius:10px;
+  transition:background .22s,transform .22s;
+  cursor:none;
+}
+.sb-item:hover,.sb-item.active{
+  background:linear-gradient(135deg,rgba(192,132,184,.18),rgba(125,181,216,.1));
+  transform:translateX(4px);
+}
+.sb-dot{width:7px;height:7px;border-radius:50%;background:rgba(192,132,184,.3);flex-shrink:0;transition:background .22s,box-shadow .22s;}
+.sb-item.active .sb-dot{background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 0 3px rgba(192,132,184,.2);}
+.sb-label{font-size:.73rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#2b2440;white-space:nowrap;transition:color .22s;}
+.sb-item:hover .sb-label,.sb-item.active .sb-label{color:#7c4376;}
+.sb-icon{font-size:1.05rem;flex-shrink:0;}
+#menu-btn{
+  display:none;position:fixed;left:0;bottom:22px;z-index:260;
+  width:56px;height:56px;border:none;border-radius:0 28px 28px 0;
+  background:linear-gradient(135deg,rgba(255,248,252,.97),rgba(249,230,244,.97));
+  backdrop-filter:blur(12px);border-top:1px solid rgba(192,132,184,.28);border-right:1px solid rgba(192,132,184,.28);border-bottom:1px solid rgba(192,132,184,.28);
+  box-shadow:4px 0 22px rgba(192,132,184,.25);font-size:1.35rem;cursor:none;
+  align-items:center;justify-content:center;padding-left:6px;
+}
+#menu-btn:active{transform:scale(.94);}
+@media(max-width:900px){
+  #sidebar{display:flex;transform:translateY(-50%) translateX(-115%);opacity:0;max-height:84vh;overflow-y:auto;}
+  #sidebar.open{transform:translateY(-50%) translateX(0);opacity:1;}
+  #menu-btn{display:flex;}
+}
+
+/* ══════════════
+   HERO (üst pembe şerit)
+══════════════ */
+.hero-bar{
+  position:fixed;top:0;left:0;right:0;z-index:150;
+  background:linear-gradient(160deg,#fce4f0 0%,#edd5f5 50%,#d4e8f7 100%);
+  padding:10px 0 8px;
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  box-shadow:0 3px 22px rgba(124,63,118,.24);
+  border-bottom:2px solid transparent;
+  border-image:linear-gradient(90deg,transparent,#7a3a72 30%,#2b6b9c 70%,transparent) 1;
+  overflow:hidden;
+}
+.hero-bar::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 20% 80%,rgba(249,198,207,.5) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 20%,rgba(212,234,247,.5) 0%,transparent 50%);
+  animation:bgPulse 7s ease-in-out infinite alternate;
+}
+@keyframes bgPulse{from{opacity:.6}to{opacity:1}}
+.hero-bar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#7a3a72 30%,#2b6b9c 70%,transparent);
+  animation:shimmer 3s ease-in-out infinite alternate;
+}
+@keyframes shimmer{from{opacity:.4}to{opacity:1}}
+
+.hb-avatar{
+  width:56px;height:56px;border-radius:50%;overflow:hidden;
+  border:3px solid #fff;
+  box-shadow:0 3px 16px rgba(124,63,118,.35),0 0 0 3px rgba(124,63,118,.30),0 0 0 7px rgba(255,255,255,.55);
+  position:relative;z-index:2;flex-shrink:0;
+  animation:fadeUp .6s .1s both;
+}
+.hb-avatar img{width:100%;height:100%;object-fit:cover;object-position:center top;}
+
+.hb-text{position:relative;z-index:2;text-align:center;}
+.hb-name{
+  font-family:'Playfair Display',serif;font-weight:900;
+  font-size:clamp(1.4rem,2.8vw,2.25rem);line-height:1.05;
+  background:linear-gradient(135deg,#6d2f66,#215c8c,#8f4a1e);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 5px rgba(124,63,118,.22));
+  animation:fadeUp .7s .3s both;
+}
+.hb-name2{
+  font-family:'Dancing Script',cursive;
+  font-size:clamp(.85rem,1.8vw,1.4rem);
+  background:linear-gradient(135deg,#8f4318,#6d2f66);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:fadeUp .7s .45s both;
+}
+.hb-sub{
+  display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:1.8px;color:#3f2d58;
+  background:rgba(255,255,255,.78);border:1px solid rgba(124,63,118,.28);border-radius:50px;
+  padding:4px 16px;margin-top:7px;backdrop-filter:blur(6px);
+  box-shadow:0 2px 10px rgba(124,63,118,.14);
+  animation:fadeUp .7s .6s both;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════
+   PANEL SİSTEMİ
+══════════════ */
+#app{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  padding-top:96px; /* hero bar yüksekliği (91 px) + 5 px nefes */
+  padding-left:0;
+  overflow:hidden;
+}
+.panel{
+  position:absolute;inset:96px 0 0 0;
+  overflow-y:auto;
+  opacity:0;
+  pointer-events:none;
+  transform:translateX(40px);
+  transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
+  padding:40px 60px 60px 238px;
+}
+.panel.active{
+  opacity:1;pointer-events:all;transform:translateX(0);
+}
+.panel.exit-left{
+  opacity:0;transform:translateX(-40px);
+}
+
+/* ── bölüm başlıkları ── */
+.sec-tag{font-size:.72rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#8a4a84;margin-bottom:8px;}
+.sec-title{
+  font-family:'Playfair Display',serif;font-size:clamp(1.9rem,3.6vw,2.95rem);font-weight:900;
+  line-height:1.2;margin-bottom:36px;display:inline-block;
+  background:linear-gradient(135deg,#241d38,#8a4a84);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  position:relative;
+}
+.sec-title::after{content:'';position:absolute;bottom:-8px;left:0;width:64px;height:4px;background:linear-gradient(90deg,#8a4a84,#4b8cc0);border-radius:4px;}
+
+/* ══ PANEL: HAKKINDA ══ */
+.about-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:46px;align-items:start;}
+@media(max-width:768px){.about-grid{grid-template-columns:1fr;}
+  .portre-wrap{width:min(100%,340px);margin:0 auto 56px;}}
+@media(max-width:420px){.portre-wrap{width:100%;}.por-name{padding:8px 18px;}}
+
+/* ══ PORTRE ÇERÇEVESİ — TAM BOY, KIRPMA YOK ══ */
+.portre-wrap{position:relative;width:340px;flex-shrink:0;animation:fadeUp .7s .2s both;}
+.por-halo{position:absolute;inset:-34px;border-radius:50%;background:radial-gradient(circle,rgba(192,132,184,.20) 0%,transparent 68%);z-index:0;animation:bgPulse 5s ease-in-out infinite alternate;pointer-events:none;}
+.portre-frame{
+  position:relative;z-index:1;border-radius:22px;padding:10px;
+  background:conic-gradient(from 0deg,#f9c6cf,#e8d5f5,#d4eaf7,#d4f5e9,#f5d98b,#f9c6cf);
+  box-shadow:0 18px 46px rgba(192,132,184,.28),inset 0 0 0 1px rgba(255,255,255,.75);
+  transition:transform .45s cubic-bezier(.4,0,.2,1),box-shadow .45s;
+}
+.portre-frame:hover{box-shadow:0 26px 62px rgba(192,132,184,.42);}
+.portre-inner{position:relative;display:block;border-radius:15px;overflow:hidden;background:#fffaf4;}
+/* object-fit:contain -> fotoğrafın TAMAMI görünür, hiçbir kenarı kesilmez */
+.portre-inner img{display:block;width:100%;height:auto;object-fit:contain;object-position:center;}
+.portre-inner::after{content:'';position:absolute;top:0;left:-75%;width:45%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg);transition:left .8s;}
+.portre-frame:hover .portre-inner::after{left:135%;}
+/* simetrik köşe süsleri */
+.por-corner{position:absolute;width:32px;height:32px;z-index:3;pointer-events:none;}
+.por-corner.tl{top:-7px;left:-7px;border-top:3px solid var(--accent);border-left:3px solid var(--accent);border-radius:16px 0 0 0;}
+.por-corner.tr{top:-7px;right:-7px;border-top:3px solid var(--accent);border-right:3px solid var(--accent);border-radius:0 16px 0 0;}
+.por-corner.bl{bottom:-7px;left:-7px;border-bottom:3px solid var(--gold-deep,#e0b95c);border-left:3px solid var(--gold-deep,#e0b95c);border-radius:0 0 0 16px;}
+.por-corner.br{bottom:-7px;right:-7px;border-bottom:3px solid var(--gold-deep,#e0b95c);border-right:3px solid var(--gold-deep,#e0b95c);border-radius:0 0 16px 0;}
+/* isim plaketi */
+.por-name{
+  position:relative;z-index:4;display:block;width:max-content;max-width:100%;margin:26px auto 0;white-space:nowrap;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(10px);
+  border:1px solid rgba(192,132,184,.28);border-radius:50px;padding:9px 26px;
+  box-shadow:0 8px 24px rgba(192,132,184,.22);
+}
+.por-name b{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text);}
+.por-name span{font-family:'Dancing Script',cursive;font-size:.98rem;color:var(--accent);}
+/* simge şeridi (simetrik, 5 simge) */
+.simge-seridi{display:flex;justify-content:center;gap:12px;margin-top:18px;}
+.simge{
+  width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.25rem;
+  background:linear-gradient(135deg,#fce4f0,#e8d5f5);border:1px solid rgba(192,132,184,.25);
+  box-shadow:0 6px 18px rgba(192,132,184,.16);cursor:none;
+  animation:floaty 3s ease-in-out infinite alternate;transition:transform .3s,box-shadow .3s,background .3s;
+}
+.simge:nth-child(2){animation-delay:-.6s}.simge:nth-child(3){animation-delay:-1.2s}
+.simge:nth-child(4){animation-delay:-1.8s}.simge:nth-child(5){animation-delay:-2.4s}
+@keyframes floaty{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.simge:hover{transform:scale(1.16) rotate(6deg);background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 10px 26px rgba(192,132,184,.35);}
+.about-text p{font-size:1.02rem;font-weight:500;line-height:1.9;color:#413655;margin-bottom:16px;}
+
+/* ══ PANEL: BECERİLER ══ */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px;margin-bottom:36px;}
+.skill-pill{
+  background:linear-gradient(135deg,#fce4f0,#e8d5f5);border-radius:50px;
+  padding:11px 18px;text-align:center;font-size:.87rem;font-weight:600;color:#2b2440;
+  transition:all .3s;border:1px solid rgba(192,132,184,.2);cursor:none;
+}
+.skill-pill:hover{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;transform:scale(1.07) translateY(-4px);box-shadow:0 8px 24px rgba(192,132,184,.35);}
+.prog-list{display:flex;flex-direction:column;gap:16px;}
+.prog-item label{font-size:.9rem;font-weight:700;color:#2b2440;display:flex;justify-content:space-between;margin-bottom:9px;line-height:1.6;gap:14px;}
+.prog-track{background:rgba(192,132,184,.15);border-radius:50px;height:8px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width 1.4s cubic-bezier(.4,0,.2,1);}
+
+/* ══ PANEL: ESERLER ══ */
+.books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:24px;}
+.book-card{
+  border-radius:20px;overflow:hidden;background:#fff;
+  box-shadow:0 6px 24px rgba(192,132,184,.12);
+  border:1px solid rgba(192,132,184,.12);
+  transition:transform .35s,box-shadow .35s;
+  transform-style:preserve-3d;position:relative;
+}
+.book-card::after{content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .6s;}
+.book-card:hover::after{left:130%;}
+.book-card:hover{transform:translateY(-10px) rotateY(-8deg) rotateX(3deg);box-shadow:0 20px 48px rgba(192,132,184,.25);}
+.book-cover{height:140px;display:flex;align-items:center;justify-content:center;font-size:3rem;}
+.book-body{padding:18px;}
+.book-status{font-size:.62rem;letter-spacing:3px;text-transform:uppercase;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:8px;}
+.book-status.done{background:#d4f5e9;color:#2d7a5f;}
+.book-status.wip{background:#fde8d8;color:#a0512a;}
+.book-title{font-family:'Playfair Display',serif;font-size:.98rem;font-weight:700;line-height:1.4;color:#2b2440;}
+
+/* ══ PANEL: SERTİFİKALAR ══ */
+.cert-logos{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:flex-start;}
+.cert-badge{
+  background:rgba(255,255,255,.88);backdrop-filter:blur(8px);
+  border-radius:12px;padding:12px 20px;font-size:.87rem;font-weight:600;color:#2b2440;
+  border:1px solid rgba(192,132,184,.18);box-shadow:0 4px 14px rgba(192,132,184,.1);
+  transition:all .3s;cursor:none;transform-style:preserve-3d;
+}
+.cert-badge:hover{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;transform:perspective(300px) rotateX(-8deg) rotateY(6deg) translateZ(10px) scale(1.08);box-shadow:0 10px 28px rgba(192,132,184,.35);}
+
+/* ══ PANEL: İSTATİSTİKLER ══ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:22px;}
+.stat-card{
+  background:rgba(255,255,255,.7);backdrop-filter:blur(10px);border-radius:22px;
+  padding:32px 20px;text-align:center;
+  box-shadow:0 8px 28px rgba(192,132,184,.14);border:1px solid rgba(255,255,255,.85);
+  transition:transform .3s,box-shadow .3s;transform-style:preserve-3d;
+  animation:float3d 4s ease-in-out infinite alternate;
+}
+.stat-card:nth-child(2){animation-delay:-.8s}.stat-card:nth-child(3){animation-delay:-1.6s}
+.stat-card:nth-child(4){animation-delay:-2.4s}.stat-card:nth-child(5){animation-delay:-3.2s}
+@keyframes float3d{from{transform:translateY(0) rotateX(0deg);box-shadow:0 8px 28px rgba(192,132,184,.14)}to{transform:translateY(-10px) rotateX(4deg);box-shadow:0 22px 44px rgba(192,132,184,.26)}}
+.stat-num{font-family:'Playfair Display',serif;font-size:3rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:inline-block;transition:transform .3s;}
+.stat-card:hover .stat-num{transform:perspective(200px) rotateX(-12deg) scale(1.12);}
+.stat-label{font-size:.84rem;font-weight:600;letter-spacing:1px;color:#5d4d78;margin-top:6px;}
+
+/* ══ PANEL: ZAMAN ══ */
+.timeline{position:relative;padding-left:36px;}
+.timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--accent),var(--accent2),transparent);}
+.tl-item{position:relative;margin-bottom:32px;animation:fadeUp .6s both;}
+.tl-dot{position:absolute;left:-30px;top:4px;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 0 4px rgba(192,132,184,.2);animation:dotPulse 2s ease-in-out infinite;}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 0 4px rgba(192,132,184,.2)}50%{box-shadow:0 0 0 8px rgba(192,132,184,.07)}}
+.tl-year{font-size:.72rem;letter-spacing:3px;color:#8a4a84;font-weight:700;text-transform:uppercase;}
+.tl-text{font-size:.98rem;font-weight:500;color:#413655;line-height:1.7;margin-top:4px;}
+
+/* ══ PANEL: SİNEMA ══ */
+.cinema-panel{background:#0d0820;border-radius:24px;padding:48px;position:relative;overflow:hidden;color:#f0e6ff;}
+.cinema-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(192,132,184,.1),transparent 70%);animation:cinemaPulse 4s ease-in-out infinite alternate;}
+@keyframes cinemaPulse{from{opacity:.5}to{opacity:1}}
+.cinema-num{font-family:'Playfair Display',serif;font-size:clamp(4rem,10vw,8rem);font-weight:900;background:linear-gradient(135deg,#c084b8,#7db5d8,#f5d98b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;filter:drop-shadow(0 0 30px rgba(192,132,184,.5));animation:neonFlicker 5s ease-in-out infinite;line-height:1;}
+@keyframes neonFlicker{0%,100%{filter:brightness(1) drop-shadow(0 0 20px rgba(192,132,184,.4))}50%{filter:brightness(1.5) drop-shadow(0 0 40px rgba(192,132,184,.7))}}
+.cinema-title-big{font-family:'Dancing Script',cursive;font-size:clamp(1.8rem,4vw,3rem);color:#f5d98b;margin:16px 0 10px;}
+.cinema-desc{font-size:1.04rem;font-weight:500;color:#e6dcfa;line-height:1.8;}
+#star-3d-wrap{position:absolute;right:40px;bottom:40px;width:70px;height:70px;perspective:300px;pointer-events:none;}
+.star-3d{width:70px;height:70px;transform-style:preserve-3d;animation:starSpin 6s linear infinite;display:flex;align-items:center;justify-content:center;font-size:2.2rem;}
+@keyframes starSpin{from{transform:rotateY(0deg) rotateX(20deg)}to{transform:rotateY(360deg) rotateX(20deg)}}
+
+/* ══ PANEL: FELSEFE ══ */
+.phil-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;}
+.phil-card{background:linear-gradient(145deg,#fce4f0,#e8d5f5);border-radius:22px;padding:32px 26px;box-shadow:0 6px 22px rgba(192,132,184,.12);transition:transform .3s,box-shadow .3s;transform-style:preserve-3d;}
+.phil-card:hover{transform:translateY(-8px) perspective(600px) rotateY(5deg);box-shadow:0 16px 40px rgba(192,132,184,.22);}
+.phil-icon{font-size:2.2rem;margin-bottom:14px;}
+.phil-card h3{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:10px;}
+.phil-card p{font-size:.93rem;font-weight:500;line-height:1.8;color:#4c3f63;}
+
+/* ══ PANEL: ALINTI ══ */
+.big-quote-panel{
+  min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:60px 24px;
+  background:linear-gradient(135deg,#fce4f0,#e8d5f5,#d4eaf7);border-radius:24px;
+  position:relative;overflow:hidden;
+}
+.big-quote-panel::before,.big-quote-panel::after{font-family:'Playfair Display',serif;font-size:16rem;line-height:1;color:rgba(192,132,184,.08);position:absolute;pointer-events:none;}
+.big-quote-panel::before{content:'\201C';top:-40px;left:-10px;}
+.big-quote-panel::after{content:'\201D';bottom:-80px;right:-10px;}
+.big-quote-panel blockquote{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.3rem,2.8vw,2rem);color:var(--text);max-width:680px;line-height:1.7;position:relative;z-index:1;}
+.big-quote-panel cite{display:block;margin-top:24px;font-style:normal;font-size:.95rem;color:var(--accent);letter-spacing:2px;}
+
+/* ══ PANEL: TEKNOLOJİ ══ */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px;}
+.tech-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.8),rgba(232,213,245,.3));
+  border-radius:18px;padding:24px 16px;text-align:center;
+  border:1px solid rgba(192,132,184,.18);
+  box-shadow:0 4px 18px rgba(192,132,184,.1);
+  transition:all .3s;transform-style:preserve-3d;cursor:none;
+}
+.tech-card:hover{transform:translateY(-8px) perspective(400px) rotateX(-8deg);box-shadow:0 16px 36px rgba(192,132,184,.25);}
+.tech-icon{font-size:2.2rem;margin-bottom:10px;}
+.tech-name{font-size:.85rem;font-weight:700;color:#2b2440;letter-spacing:1px;}
+
+/* ══ PANEL: EĞİTİM ══ */
+.edu-list{display:flex;flex-direction:column;gap:18px;}
+.edu-item{background:rgba(255,255,255,.7);backdrop-filter:blur(8px);border-radius:16px;padding:22px 26px;border-left:4px solid var(--accent);box-shadow:0 4px 16px rgba(192,132,184,.1);transition:transform .3s,box-shadow .3s;}
+.edu-item:hover{transform:translateX(8px);box-shadow:0 8px 28px rgba(192,132,184,.2);}
+.edu-inst{font-family:'Playfair Display',serif;font-size:1.08rem;font-weight:700;color:#2b2440;}
+.edu-detail{font-size:.88rem;font-weight:500;color:#5d4d78;margin-top:4px;line-height:1.6;}
+
+/* ══ PANEL: İLETİŞİM ══ */
+.contact-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;}
+.contact-card{background:linear-gradient(145deg,#fce4f0,#e8d5f5);border-radius:20px;padding:30px 24px;text-align:center;box-shadow:0 6px 22px rgba(192,132,184,.12);transition:transform .3s;}
+.contact-card:hover{transform:translateY(-8px) scale(1.03);}
+.contact-icon{font-size:2.5rem;margin-bottom:12px;}
+.contact-label{font-size:.84rem;letter-spacing:2px;text-transform:uppercase;color:#8a4a84;font-weight:700;}
+.contact-val{font-size:.94rem;font-weight:600;color:var(--text);margin-top:6px;}
+
+/* scrollbar */
+.panel::-webkit-scrollbar{width:5px;}
+.panel::-webkit-scrollbar-track{background:transparent;}
+.panel::-webkit-scrollbar-thumb{background:rgba(192,132,184,.3);border-radius:4px;}
+
+/* 3D KÜPLER */
+#cube-wrap{position:fixed;right:4%;top:50%;transform:translateY(-50%);width:90px;height:90px;perspective:400px;pointer-events:none;opacity:.15;z-index:1;}
+.cube{width:100%;height:100%;transform-style:preserve-3d;animation:cubeRotate 12s linear infinite;}
+@keyframes cubeRotate{from{transform:rotateX(0) rotateY(0)}to{transform:rotateX(360deg) rotateY(360deg)}}
+.cube-face{position:absolute;width:90px;height:90px;border:2px solid rgba(192,132,184,.8);background:rgba(192,132,184,.05);}
+.cube-face.front{transform:translateZ(45px)}.cube-face.back{transform:rotateY(180deg) translateZ(45px)}
+.cube-face.left{transform:rotateY(-90deg) translateZ(45px)}.cube-face.right{transform:rotateY(90deg) translateZ(45px)}
+.cube-face.top{transform:rotateX(90deg) translateZ(45px)}.cube-face.bottom{transform:rotateX(-90deg) translateZ(45px)}
+
+/* stars */
+.star{position:fixed;border-radius:50%;background:#fff;pointer-events:none;z-index:1;animation:twinkle ease-in-out infinite alternate;}
+@keyframes twinkle{from{opacity:.1;transform:scale(.8)}to{opacity:.7;transform:scale(1.2)}}
+
+@media(max-width:1100px){.panel{padding:36px 34px 56px 210px;}}
+@media(max-width:900px){.panel{padding:32px 26px 48px 26px;}}
+@media(max-width:600px){
+  .panel{padding:24px 20px 40px 20px;}
+  .hero-bar{gap:10px;padding:7px 10px 6px;}
+  .hb-avatar{width:48px;height:48px;}
+  .hb-name{font-size:1.4rem;}
+  .hb-sub{font-size:.64rem;font-weight:700;letter-spacing:.4px;white-space:nowrap;padding:3px 11px;margin-top:4px;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div id="scroll-prog"></div>
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<div id="cursor-glow"></div>
+
+<!-- 3D KÜPÜ -->
+<div id="cube-wrap">
+  <div class="cube">
+    <div class="cube-face front"></div><div class="cube-face back"></div>
+    <div class="cube-face left"></div><div class="cube-face right"></div>
+    <div class="cube-face top"></div><div class="cube-face bottom"></div>
+  </div>
+</div>
+
+<!-- ═══ ÜST PEMBE HERO BAR ═══ -->
+<div class="hero-bar">
+  <div class="hb-avatar"><img src="profil.jpg" alt="KK"/></div>
+  <div class="hb-text">
+    <div class="hb-name">Üstad <span style="font-family:'Dancing Script',cursive;font-size:.85em;">Kenan Kuzucu</span></div>
+    <div class="hb-sub">Araştırmacı &bull; Yazar &bull; Şair &bull; Senarist &bull; Teknoloji Araştırmacısı</div>
+  </div>
+</div>
+
+<!-- ═══ SOL SIDEBAR ═══ -->
+<button id="menu-btn" aria-label="Menü">☰</button>
+<div id="sidebar">
+  <a class="sb-item active" data-panel="panel-hakkinda" href="#">
+    <span class="sb-icon">👤</span><span class="sb-dot"></span><span class="sb-label">Hakkında</span>
+  </a>
+  <a class="sb-item" data-panel="panel-istatistik" href="#">
+    <span class="sb-icon">📊</span><span class="sb-dot"></span><span class="sb-label">İstatistikler</span>
+  </a>
+  <a class="sb-item" data-panel="panel-beceri" href="#">
+    <span class="sb-icon">⚡</span><span class="sb-dot"></span><span class="sb-label">Beceriler</span>
+  </a>
+  <a class="sb-item" data-panel="panel-teknoloji" href="#">
+    <span class="sb-icon">💻</span><span class="sb-dot"></span><span class="sb-label">Teknoloji</span>
+  </a>
+  <a class="sb-item" data-panel="panel-eserler" href="#">
+    <span class="sb-icon">📖</span><span class="sb-dot"></span><span class="sb-label">Eserler</span>
+  </a>
+  <a class="sb-item" data-panel="panel-sertifika" href="#">
+    <span class="sb-icon">🎓</span><span class="sb-dot"></span><span class="sb-label">Sertifikalar</span>
+  </a>
+  <a class="sb-item" data-panel="panel-egitim" href="#">
+    <span class="sb-icon">🏛️</span><span class="sb-dot"></span><span class="sb-label">Eğitim</span>
+  </a>
+  <a class="sb-item" data-panel="panel-zaman" href="#">
+    <span class="sb-icon">🕰️</span><span class="sb-dot"></span><span class="sb-label">Zaman Çizelgesi</span>
+  </a>
+  <a class="sb-item" data-panel="panel-sinema" href="#">
+    <span class="sb-icon">🎬</span><span class="sb-dot"></span><span class="sb-label">Sinema</span>
+  </a>
+  <a class="sb-item" data-panel="panel-felsefe" href="#">
+    <span class="sb-icon">💡</span><span class="sb-dot"></span><span class="sb-label">Felsefe</span>
+  </a>
+  <a class="sb-item" data-panel="panel-alinti" href="#">
+    <span class="sb-icon">✨</span><span class="sb-dot"></span><span class="sb-label">Alıntı</span>
+  </a>
+  <a class="sb-item" data-panel="panel-iletisim" href="#">
+    <span class="sb-icon">📬</span><span class="sb-dot"></span><span class="sb-label">İletişim</span>
+  </a>
+</div>
+
+<!-- ═══ PANELLER ═══ -->
+<div id="app">
+
+  <!-- HAKKINDA -->
+  <div class="panel active" id="panel-hakkinda">
+    <p class="sec-tag">Biyografi</p>
+    <h2 class="sec-title">Hakkında</h2>
+    <div class="about-grid">
+      <div>
+                <div class="portre-wrap">
+          <div class="por-halo"></div>
+          <div class="portre-frame">
+            <span class="por-corner tl"></span><span class="por-corner tr"></span>
+            <span class="por-corner bl"></span><span class="por-corner br"></span>
+            <div class="portre-inner">
+              <img src="profil.jpg" alt="Kenan Kuzucu"/>
+            </div>
+          </div>
+          <div class="por-name"><b>Kenan Kuzucu</b> <span>&mdash; Üstad</span></div>
+          <div class="simge-seridi">
+            <div class="simge" title="Yazarlık">🖋️</div>
+            <div class="simge" title="Teknoloji">💻</div>
+            <div class="simge" title="Sinema">🎬</div>
+            <div class="simge" title="Siber Güvenlik">🔐</div>
+            <div class="simge" title="Kitaplar">📚</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-text">
+        <p>1981 yılında Ankara'nın Çankaya ilçesinde dünyaya gelen <strong>Kenan Kuzucu</strong>, aslen Şanlıurfa'nın Halfeti ilçesi kökenlidir. Yaşamını Gaziantep'te sürdürmektedir.</p>
+        <p>Mesleki Teknik Lise mezunu olan Kuzucu, <strong>erkek kuaförlüğü ve salon işletmeciliğinin</strong> yanı sıra bilgisayar teknisyenliği alanında da deneyim sahibidir. Çok sayıda çırak yetiştirmiştir.</p>
+        <p>Araştırmacı, yazar, şair, senarist ve dijital içerik üreticisi kimliğiyle <strong>Python, Linux, GitHub, yapay zekâ, siber güvenlik ve etik hacking</strong> konularına ilgi duymaktadır.</p>
+        <p>Yazarlık çalışmalarının merkezinde insan, toplum, ahlak, karakter ve modern dünyanın dönüşümü gibi evrensel temalar yer almaktadır.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- İSTATİSTİKLER -->
+  <div class="panel" id="panel-istatistik">
+    <p class="sec-tag">Rakamlarla</p>
+    <h2 class="sec-title">İstatistikler</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num" data-target="486">0</div><div class="stat-label">Sertifika &amp; Rozet</div></div>
+      <div class="stat-card"><div class="stat-num" data-target="12">0</div><div class="stat-label">Film Evreni</div></div>
+      <div class="stat-card"><div class="stat-num" data-target="8">0</div><div class="stat-label">Kitap Projesi</div></div>
+      <div class="stat-card"><div class="stat-num" data-target="2">0</div><div class="stat-label">Tamamlanan Eser</div></div>
+      <div class="stat-card"><div class="stat-num" data-target="13">0</div><div class="stat-label">Prestijli Kurum</div></div>
+      <div class="stat-card"><div class="stat-num" data-target="40">0</div><div class="stat-label">Yıllık Deneyim</div></div>
+    </div>
+  </div>
+
+  <!-- BECERİLER -->
+  <div class="panel" id="panel-beceri">
+    <p class="sec-tag">Uzmanlık</p>
+    <h2 class="sec-title">Beceriler</h2>
+    <div class="skills-grid">
+      <div class="skill-pill">Python</div><div class="skill-pill">Linux</div>
+      <div class="skill-pill">GitHub</div><div class="skill-pill">Yapay Zekâ</div>
+      <div class="skill-pill">Siber Güvenlik</div><div class="skill-pill">Etik Hacking</div>
+      <div class="skill-pill">Senaryo Yazarlığı</div><div class="skill-pill">Roman Yazarlığı</div>
+      <div class="skill-pill">Şiir</div><div class="skill-pill">İçerik Üretimi</div>
+      <div class="skill-pill">Dijital Medya</div><div class="skill-pill">Araştırma</div>
+      <div class="skill-pill">Kuaförlük</div><div class="skill-pill">Salon İşletmeciliği</div>
+      <div class="skill-pill">Mentörlük</div><div class="skill-pill">Bilgisayar Teknik</div>
+    </div>
+    <div class="prog-list">
+      <div><label>Araştırma &amp; Yazarlık <span>92%</span></label><div class="prog-track"><div class="prog-fill" data-w="92"></div></div></div>
+      <div><label>Teknoloji &amp; Siber Güvenlik <span>85%</span></label><div class="prog-track"><div class="prog-fill" data-w="85"></div></div></div>
+      <div><label>Senaryo &amp; Sinema <span>80%</span></label><div class="prog-track"><div class="prog-fill" data-w="80"></div></div></div>
+      <div><label>Dijital İçerik Üretimi <span>88%</span></label><div class="prog-track"><div class="prog-fill" data-w="88"></div></div></div>
+      <div><label>Kuaförlük &amp; İşletmecilik <span>95%</span></label><div class="prog-track"><div class="prog-fill" data-w="95"></div></div></div>
+    </div>
+  </div>
+
+  <!-- TEKNOLOJİ -->
+  <div class="panel" id="panel-teknoloji">
+    <p class="sec-tag">Dijital Dünya</p>
+    <h2 class="sec-title">Teknoloji Alanları</h2>
+    <div class="tech-grid">
+      <div class="tech-card"><div class="tech-icon">🐍</div><div class="tech-name">Python</div></div>
+      <div class="tech-card"><div class="tech-icon">🐧</div><div class="tech-name">Linux</div></div>
+      <div class="tech-card"><div class="tech-icon">🐙</div><div class="tech-name">GitHub</div></div>
+      <div class="tech-card"><div class="tech-icon">🤖</div><div class="tech-name">Yapay Zekâ</div></div>
+      <div class="tech-card"><div class="tech-icon">🔐</div><div class="tech-name">Siber Güvenlik</div></div>
+      <div class="tech-card"><div class="tech-icon">🕵️</div><div class="tech-name">Etik Hacking</div></div>
+      <div class="tech-card"><div class="tech-icon">🌐</div><div class="tech-name">Dijital Dönüşüm</div></div>
+      <div class="tech-card"><div class="tech-icon">📱</div><div class="tech-name">Dijital Medya</div></div>
+      <div class="tech-card"><div class="tech-icon">💾</div><div class="tech-name">Bilgisayar Teknik</div></div>
+      <div class="tech-card"><div class="tech-icon">🧠</div><div class="tech-name">Makine Öğrenmesi</div></div>
+    </div>
+  </div>
+
+  <!-- ESERLER -->
+  <div class="panel" id="panel-eserler">
+    <p class="sec-tag">Kalemden Düşen İzler</p>
+    <h2 class="sec-title">Eserler &amp; Projeler</h2>
+    <div class="books-grid">
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#fce4f0,#e8d5f5);">📖</div><div class="book-body"><span class="book-status done">Tamamlandı</span><div class="book-title">Ahlaksız Toplumlar</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#d4eaf7,#d4f5e9);">📖</div><div class="book-body"><span class="book-status done">Tamamlandı</span><div class="book-title">Sessiz Çığlıkları</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#fde8d8,#fce4f0);">✍️</div><div class="book-body"><span class="book-status wip">Devam Ediyor</span><div class="book-title">İyilik Maskesindeki Kibir</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#e8d5f5,#d4eaf7);">🎭</div><div class="book-body"><span class="book-status wip">Devam Ediyor</span><div class="book-title">Maskeler Çağı</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#d4f5e9,#d4eaf7);">⚡</div><div class="book-body"><span class="book-status wip">Devam Ediyor</span><div class="book-title">Güç Zehirlenmesi</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#fce4f0,#fde8d8);">💔</div><div class="book-body"><span class="book-status wip">Devam Ediyor</span><div class="book-title">Vicdanını Kaybedenler</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#d4eaf7,#e8d5f5);">🗡️</div><div class="book-body"><span class="book-status wip">Devam Ediyor</span><div class="book-title">Sessiz İhanet</div></div></div>
+      <div class="book-card"><div class="book-cover" style="background:linear-gradient(135deg,#f5d98b55,#fce4f0);">🏆</div><div class="book-body"><span class="book-status wip">Devam Ediyor</span><div class="book-title">Karakter</div></div></div>
+    </div>
+  </div>
+
+  <!-- SERTİFİKALAR -->
+  <div class="panel" id="panel-sertifika">
+    <p class="sec-tag">Eğitim Yolculuğu</p>
+    <h2 class="sec-title">486 Sertifika &amp; Rozet</h2>
+    <div class="cert-logos">
+      <div class="cert-badge">🎓 Harvard</div>
+      <div class="cert-badge">🏛️ Oxford</div>
+      <div class="cert-badge">🔬 Johns Hopkins</div>
+      <div class="cert-badge">🌟 Univ. of Michigan</div>
+      <div class="cert-badge">🌍 Univ. of Maryland</div>
+      <div class="cert-badge">🦘 Univ. of Tasmania</div>
+      <div class="cert-badge">🌏 OP Jindal Global</div>
+      <div class="cert-badge">📚 Open University</div>
+      <div class="cert-badge">💙 Microsoft</div>
+      <div class="cert-badge">🌈 Google</div>
+      <div class="cert-badge">🤖 IBM</div>
+      <div class="cert-badge">💼 LinkedIn Learning</div>
+      <div class="cert-badge">🇹🇷 BTK Akademi</div>
+    </div>
+  </div>
+
+  <!-- EĞİTİM -->
+  <div class="panel" id="panel-egitim">
+    <p class="sec-tag">Akademik Yolculuk</p>
+    <h2 class="sec-title">Eğitim Aldığı Kurumlar</h2>
+    <div class="edu-list">
+      <div class="edu-item"><div class="edu-inst">🎓 Harvard University</div><div class="edu-detail">Çeşitli online eğitim programları ve sertifika çalışmaları</div></div>
+      <div class="edu-item"><div class="edu-inst">🏛️ Oxford University</div><div class="edu-detail">Akademik gelişim ve araştırma odaklı programlar</div></div>
+      <div class="edu-item"><div class="edu-inst">🔬 Johns Hopkins University</div><div class="edu-detail">Bilim ve araştırma alanında ileri düzey içerikler</div></div>
+      <div class="edu-item"><div class="edu-inst">💙 Microsoft</div><div class="edu-detail">Teknoloji, yapay zekâ ve bulut sistemleri eğitimleri</div></div>
+      <div class="edu-item"><div class="edu-inst">🌈 Google</div><div class="edu-detail">Dijital pazarlama, veri analitiği ve teknoloji sertifikaları</div></div>
+      <div class="edu-item"><div class="edu-inst">🤖 IBM</div><div class="edu-detail">Yapay zekâ, makine öğrenmesi ve veri bilimi programları</div></div>
+      <div class="edu-item"><div class="edu-inst">🇹🇷 BTK Akademi</div><div class="edu-detail">Siber güvenlik, yazılım geliştirme ve dijital dönüşüm</div></div>
+      <div class="edu-item"><div class="edu-inst">💼 LinkedIn Learning</div><div class="edu-detail">Liderlik, iletişim, teknoloji ve kişisel gelişim</div></div>
+    </div>
+  </div>
+
+  <!-- ZAMAN ÇİZELGESİ -->
+  <div class="panel" id="panel-zaman">
+    <p class="sec-tag">Hayat Yolculuğu</p>
+    <h2 class="sec-title">Zaman Çizelgesi</h2>
+    <div class="timeline">
+      <div class="tl-item" style="animation-delay:.1s"><div class="tl-dot"></div><div class="tl-year">1981</div><div class="tl-text">Ankara Çankaya'da doğdu. Aslen Şanlıurfa Halfeti kökenlidir.</div></div>
+      <div class="tl-item" style="animation-delay:.2s"><div class="tl-dot"></div><div class="tl-year">Gençlik</div><div class="tl-text">Mesleki Teknik Lise'yi tamamladı. Erkek kuaförlüğüne adım attı.</div></div>
+      <div class="tl-item" style="animation-delay:.3s"><div class="tl-dot"></div><div class="tl-year">Meslek</div><div class="tl-text">Salon işletmeciliği ve bilgisayar teknisyenliği. Çok sayıda çırak yetiştirdi.</div></div>
+      <div class="tl-item" style="animation-delay:.4s"><div class="tl-dot"></div><div class="tl-year">Teknoloji</div><div class="tl-text">Python, Linux, siber güvenlik ve etik hacking dünyasına girdi.</div></div>
+      <div class="tl-item" style="animation-delay:.5s"><div class="tl-dot"></div><div class="tl-year">Eğitim</div><div class="tl-text">Harvard, Oxford, Google, IBM dahil 13+ kurumdan <strong>486 sertifika</strong> elde etti.</div></div>
+      <div class="tl-item" style="animation-delay:.6s"><div class="tl-dot"></div><div class="tl-year">Yazarlık</div><div class="tl-text">"Ahlaksız Toplumlar" ve "Sessiz Çığlıkları" tamamlandı; 6 proje devam ediyor.</div></div>
+      <div class="tl-item" style="animation-delay:.7s"><div class="tl-dot"></div><div class="tl-year">Sinema</div><div class="tl-text">"Karadeniz'in Gölgesi" — 12 filmlik sinema evreni üzerinde çalışıyor.</div></div>
+      <div class="tl-item" style="animation-delay:.8s"><div class="tl-dot"></div><div class="tl-year">Bugün</div><div class="tl-text">Gaziantep merkezli; araştırmak, üretmek ve paylaşmak yolculuğu devam ediyor.</div></div>
+    </div>
+  </div>
+
+  <!-- SİNEMA -->
+  <div class="panel" id="panel-sinema">
+    <p class="sec-tag">Perde Arkası</p>
+    <h2 class="sec-title">Sinema Evreni</h2>
+    <div class="cinema-panel">
+      <div id="star-3d-wrap"><div class="star-3d">⭐</div></div>
+      <div class="cinema-num">12</div>
+      <div class="cinema-title-big">Karadeniz'in Gölgesi</div>
+      <p class="cinema-desc">Kenan Kuzucu'nun kaleminden doğan 12 filmlik sinema evreni;<br>güç, kimlik, ahlak ve insanın dönüşümünü Karadeniz'in mistik atmosferinde ele almaktadır.</p>
+    </div>
+  </div>
+
+  <!-- FELSEFE -->
+  <div class="panel" id="panel-felsefe">
+    <p class="sec-tag">Değerler</p>
+    <h2 class="sec-title">Yaşam Felsefesi</h2>
+    <div class="phil-cards">
+      <div class="phil-card"><div class="phil-icon">💡</div><h3>Bilgi</h3><p>Öğrenmek asla bitmez. 486 sertifika bu ateşin simgesidir. Bilgi yalnızca edinilmez, paylaşıldıkça anlam kazanır.</p></div>
+      <div class="phil-card"><div class="phil-icon">🎨</div><h3>Sanat</h3><p>Şiirden senaryoya, romandan dijital içeriğe; sanat Kuzucu için nefes almak kadar doğaldır.</p></div>
+      <div class="phil-card"><div class="phil-icon">🤝</div><h3>Dostluk</h3><p>En büyük zenginlik insandır. Çırak yetiştirmekten mentörlüğe uzanan yolda gücü verdiği ilhamdadır.</p></div>
+      <div class="phil-card"><div class="phil-icon">🔭</div><h3>Vizyon</h3><p>Yapay zekâ ve dijital dönüşümün toplumsal etkisini araştırmak; teknolojiyi insanın gelişimine hizmet ettirmek.</p></div>
+      <div class="phil-card"><div class="phil-icon">⚖️</div><h3>Ahlak</h3><p>Vicdan, karakter ve dürüstlük; hem eserlerinin hem yaşamının temel eksenini oluşturur.</p></div>
+      <div class="phil-card"><div class="phil-icon">🌱</div><h3>Gelişim</h3><p>Her gün biraz daha iyi olmak. Durduğun an geride kalmaya başlarsın; büyüme hiç bitmez.</p></div>
+    </div>
+  </div>
+
+  <!-- ALINTI -->
+  <div class="panel" id="panel-alinti">
+    <p class="sec-tag">Söz</p>
+    <h2 class="sec-title">Öz Söz</h2>
+    <div class="big-quote-panel">
+      <blockquote>
+        Bilgi güçtür, sanat yaşamdır ve dostluk en büyük zenginliktir.
+        <cite>— Üstad Kenan Kuzucu</cite>
+      </blockquote>
+    </div>
+  </div>
+
+  <!-- İLETİŞİM -->
+  <div class="panel" id="panel-iletisim">
+    <p class="sec-tag">Bağlantı</p>
+    <h2 class="sec-title">İletişim</h2>
+    <div class="contact-cards">
+      <div class="contact-card"><div class="contact-icon">📍</div><div class="contact-label">Konum</div><div class="contact-val">Gaziantep, Türkiye</div></div>
+      <div class="contact-card"><div class="contact-icon">🌍</div><div class="contact-label">Köken</div><div class="contact-val">Halfeti, Şanlıurfa</div></div>
+      <div class="contact-card"><div class="contact-icon">🐍</div><div class="contact-label">Teknoloji</div><div class="contact-val">Python &bull; Linux &bull; AI</div></div>
+      <div class="contact-card"><div class="contact-icon">✍️</div><div class="contact-label">Yazarlık</div><div class="contact-val">8 Kitap Projesi</div></div>
+      <div class="contact-card"><div class="contact-icon">🎓</div><div class="contact-label">Sertifikalar</div><div class="contact-val">486 Sertifika &amp; Rozet</div></div>
+      <div class="contact-card"><div class="contact-icon">🎬</div><div class="contact-label">Sinema</div><div class="contact-val">12 Film Evreni</div></div>
+    </div>
+  </div>
+
+</div><!-- end app -->
+
+<script>
+/* ─── CANVAS ─── */
+(function(){
+  const c=document.getElementById('canvas-bg'),ctx=c.getContext('2d');
+  let W,H,pts=[];
+  const cols=['#f9c6cf','#e8d5f5','#d4eaf7','#fde8d8','#f5d98b','#d4f5e9'];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  class P{constructor(){this.x=Math.random()*W;this.y=Math.random()*H;this.r=Math.random()*2.5+1;this.dx=(Math.random()-.5)*.4;this.dy=(Math.random()-.5)*.4;this.color=cols[Math.floor(Math.random()*cols.length)];this.a=Math.random()*.5+.1;}draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=this.color;ctx.globalAlpha=this.a;ctx.fill();}update(){this.x+=this.dx;this.y+=this.dy;if(this.x<0||this.x>W)this.dx*=-1;if(this.y<0||this.y>H)this.dy*=-1;}}
+  for(let i=0;i<160;i++)pts.push(new P());
+  function draw(){ctx.clearRect(0,0,W,H);ctx.globalAlpha=1;for(let i=0;i<pts.length;i++){for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=pts[i].color;ctx.globalAlpha=(1-d/120)*.1;ctx.lineWidth=.5;ctx.stroke();}}pts[i].draw();pts[i].update();}requestAnimationFrame(draw);}
+  draw();
+})();
+
+/* ─── PETALS ─── */
+(function(){
+  const cols=['#f9c6cf','#e8d5f5','#fde8d8','#d4f5e9','#f5d98b'];
+  for(let i=0;i<35;i++){const p=document.createElement('div');p.className='petal';const s=(Math.random()*10+5)+'px';p.style.cssText=`left:${Math.random()*100}vw;width:${s};height:${s};background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${Math.random()*9+5}s;animation-delay:${Math.random()*12}s;`;document.body.appendChild(p);}
+})();
+
+/* ─── STARS ─── */
+(function(){
+  for(let i=0;i<50;i++){const s=document.createElement('div');s.className='star';const sz=(Math.random()*2.5+1)+'px';s.style.cssText=`width:${sz};height:${sz};left:${Math.random()*100}vw;top:${Math.random()*100}vh;animation-duration:${Math.random()*3+1.5}s;animation-delay:${Math.random()*4}s;`;document.body.appendChild(s);}
+})();
+
+/* ─── CURSOR ─── */
+(function(){
+  const dot=document.getElementById('cursor-dot'),ring=document.getElementById('cursor-ring'),glow=document.getElementById('cursor-glow');
+  document.addEventListener('mousemove',e=>{dot.style.left=e.clientX+'px';dot.style.top=e.clientY+'px';ring.style.left=e.clientX+'px';ring.style.top=e.clientY+'px';glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px';});
+  document.querySelectorAll('a,.skill-pill,.cert-badge,.book-card,.stat-card,.tech-card,.phil-card,.contact-card').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{ring.style.width='58px';ring.style.height='58px';ring.style.borderColor='#f5d98b';dot.style.transform='translate(-50%,-50%) scale(1.6)';});
+    el.addEventListener('mouseleave',()=>{ring.style.width='36px';ring.style.height='36px';ring.style.borderColor='var(--accent)';dot.style.transform='translate(-50%,-50%) scale(1)';});
+  });
+})();
+
+/* ─── RIPPLE ─── */
+document.addEventListener('click',e=>{const r=document.createElement('div');r.className='ripple-effect';const sz=80;r.style.cssText=`width:${sz}px;height:${sz}px;left:${e.clientX-sz/2}px;top:${e.clientY-sz/2}px;`;document.body.appendChild(r);setTimeout(()=>r.remove(),700);});
+
+/* ─── SCROLL PROG (panel içi) ─── */
+document.querySelectorAll('.panel').forEach(p=>{p.addEventListener('scroll',()=>{const pct=p.scrollTop/(p.scrollHeight-p.clientHeight)*100;document.getElementById('scroll-prog').style.width=pct+'%';});});
+
+/* ─── PANEL GEÇİŞ SİSTEMİ ─── */
+let current='panel-hakkinda';
+function switchPanel(id){
+  if(id===current)return;
+  const prev=document.getElementById(current);
+  const next=document.getElementById(id);
+  prev.classList.add('exit-left');
+  setTimeout(()=>{prev.classList.remove('active','exit-left');},420);
+  next.classList.add('active');
+  current=id;
+  // progress bars
+  next.querySelectorAll('.prog-fill').forEach(f=>{setTimeout(()=>{f.style.width=f.dataset.w+'%';},200);});
+  // count-up
+  next.querySelectorAll('.stat-num').forEach(n=>{
+    const target=+n.dataset.target;let cur=0;const step=Math.ceil(target/60);
+    const t=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(t);}n.textContent=cur;},25);
+  });
+  // tl-item anim reset
+  next.querySelectorAll('.tl-item').forEach((el,i)=>{el.style.opacity='0';setTimeout(()=>{el.style.opacity='1';},i*100+200);});
+}
+
+document.querySelectorAll('.sb-item').forEach(item=>{
+  item.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    switchPanel(item.dataset.panel);
+    // show sidebar if hidden
+    document.getElementById('sidebar').classList.remove('hidden');
+  });
+});
+
+/* ─── MOBİL MENÜ ─── */
+const mb=document.getElementById('menu-btn'),sb=document.getElementById('sidebar');
+mb.addEventListener('click',e=>{e.stopPropagation();sb.classList.toggle('open');});
+sb.addEventListener('click',e=>{if(window.innerWidth<=900&&e.target.closest('.sb-item'))sb.classList.remove('open');});
+
+/* sidebar göster */
+document.getElementById('sidebar').classList.remove('hidden');
+
+/* ─── 3D MOUSE ─── */
+document.addEventListener('mousemove',e=>{
+  const cx=innerWidth/2,cy=innerHeight/2;
+  const dx=(e.clientX-cx)/cx,dy=(e.clientY-cy)/cy;
+  const cube=document.querySelector('.cube');
+  if(cube)cube.style.transform=`rotateX(${dy*-20}deg) rotateY(${dx*20}deg)`;
+  document.querySelectorAll('.portre-wrap').forEach(av=>{av.style.transform=`perspective(600px) rotateY(${dx*8}deg) rotateX(${-dy*6}deg)`;});
+});
+
+/* ─── TILT CARDS ─── */
+document.querySelectorAll('.stat-card,.phil-card,.tech-card,.book-card').forEach(c=>{
+  c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5;const y=(e.clientY-r.top)/r.height-.5;c.style.transform=`perspective(500px) rotateX(${-y*14}deg) rotateY(${x*14}deg) translateY(-8px) scale(1.03)`;});
+  c.addEventListener('mouseleave',()=>c.style.transform='');
+});
+
+/* ─── init panel ─── */
+switchPanel('panel-hakkinda');
+document.querySelector('[data-panel="panel-hakkinda"]').classList.add('active');
+</script>
+</body>
+</html>
