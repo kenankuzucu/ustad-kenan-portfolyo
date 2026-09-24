@@ -1,5 +1,10 @@
 # Üstad Kenan Kuzucu — Kişisel Portfolyo Sitesi
 
+[![Canlı Site](https://img.shields.io/badge/CANLI_ADRES-ustad--kenan--portfolyo-2ea44f?style=for-the-badge&logo=googlechrome&logoColor=white)](https://kenankuzucu.github.io/ustad-kenan-portfolyo/)
+
+**Canlı adres:** https://kenankuzucu.github.io/ustad-kenan-portfolyo/
+
+
 Tek dosyalık (single-file) kişisel biyografi / portfolyo sitesi. `index.html` içinde CSS ve JS gömülüdür;
 internet olmadan (Google Fonts dışında) açılır, sunucu/kurulum gerektirmez.
 
@@ -21,7 +26,10 @@ Zaman Çizelgesi · Sinema · Felsefe · Alıntı · İletişim
 - `ekran/` — teslim kanıtı ekran görüntüleri (12 panel + üst şerit, masaüstü/mobil)
 
 ## Açma
-`index.html` dosyasına çift tıkla. Yayına almak için: klasörü bir web sunucusuna/alt klasöre kopyala.
+Canlı: https://kenankuzucu.github.io/ustad-kenan-portfolyo/  ·  Yerel: `index.html` dosyasına çift tıkla (sunucu/kurulum gerekmez).
 
 ---
-Bu depo **özel (private)** tutulur; portre fotoğrafı ve kişisel bilgiler içerdiği için herkese açık değildir.
+Bu depo, GitHub Pages üzerinden **canlı yayında**dır: https://kenankuzucu.github.io/ustad-kenan-portfolyo/
+Portre fotoğrafı ve biyografi bilinçli olarak herkese açıktır (site Kenan Kuzucu'nun kendi portfolyosudur).
+Site içinde telefon, e-posta veya açık adres **bulunmaz**; sayfa yalnızca il/ülke bilgisi ve biyografi metni içerir.
+Yayından kaldırmak / tekrar gizli yapmak istendiğinde: depoyu private yapmak canlı adresi kapatır (ücretsiz hesapta).
